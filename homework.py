@@ -29,7 +29,7 @@ HOMEWORK_STATUSES = {
 }
 
 
-def send_message(bot, message) -> None:
+def send_message(bot, message):
     """Отправляем сообщение в Telegram чат, определяемый
     переменной окружения TELEGRAM_CHAT_ID. Принимаем на вход
     два параметра: экземпляр класса Bot и строку
@@ -45,7 +45,7 @@ def send_message(bot, message) -> None:
         logging.error(f'Сбой при отправке сообщения в Telegram: {error}')
 
 
-def get_api_answer(current_timestamp) -> dict:
+def get_api_answer(current_timestamp):
     """Делаем запрос к единственному эндпоинту API-сервиса.
     В качестве параметра функция получаем временную метку.
     В случае успешного запроса должна вернуть ответ API,
@@ -63,7 +63,7 @@ def get_api_answer(current_timestamp) -> dict:
     return response
 
 
-def check_response(response) -> dict:
+def check_response(response):
     """Проверяем ответ API на корректность. В качестве параметра
     функция получает ответ API, приведенный к типам данных Python.
     Если ответ API соответствует ожиданиям, то функция должна
@@ -83,7 +83,7 @@ def check_response(response) -> dict:
     return response
 
 
-def parse_status(homework) -> str:
+def parse_status(homework):
     """Извлекаем из информации о конкретной домашней работе статус этой
     работы. В качестве параметра функция получает только один элемент
     из списка домашних работ. В случае успеха, функция возвращает
@@ -104,7 +104,7 @@ def parse_status(homework) -> str:
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
-def check_tokens() -> bool:
+def check_tokens():
     """ Проверяет доступность переменных окружения, которые нужны для
     работы программы. Если отсутствует хотя бы одна переменная окружения
     — функция должна вернуть False, иначе — True
