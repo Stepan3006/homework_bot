@@ -39,7 +39,7 @@ def send_message(bot, message):
             text=message,
         )
     except Exception as error:
-        logging.error(f'Сбой при отправке сообщения в Telegram: {error}')
+        raise Exception(f'Сбой при отправке сообщения в Telegram: {error}')
     else:
         logging.info(f'Бот успешно отправил сообщение Telegram: {message}')
 
@@ -60,9 +60,6 @@ def get_api_answer(current_timestamp):
     except Exception as error:
         raise Exception(f' Мы поймали ошибку{error}')
     if homework_statuses.status_code != HTTPStatus.OK:
-        logging.error(
-            f'Эндпойнт не доступен, программа остановлена{homework_statuses}'
-        )
         raise Exception(
             f'Oшибочный статус ответа по Api{homework_statuses.status_code}'
         )
