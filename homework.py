@@ -17,12 +17,8 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s',
-)
 
-HOMEWORK_STATUSES = {
+HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
@@ -37,13 +33,15 @@ def send_message(bot, message):
     с текстом сообщения.
     """
     try:
+        logging.info(f'Бот начал отправку сообщения Telegram: {message}')
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
             text=message,
         )
-        logging.info(f'Бот успешно отправил сообщение Telegram: {message}')
     except Exception as error:
         logging.error(f'Сбой при отправке сообщения в Telegram: {error}')
+    else:
+        logging.info(f'Бот успешно отправил сообщение Telegram: {message}')
 
 
 def get_api_answer(current_timestamp):
@@ -54,13 +52,24 @@ def get_api_answer(current_timestamp):
     """
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    request_detail = {'headers': HEADERS, 'params': params}
+    try:
+        homework_statuses = requests.get(
+            ENDPOINT, **request_detail
+        )
+    except Exception as error:
+        raise Exception(f' Мы поймали ошибку{error}')
     if homework_statuses.status_code != HTTPStatus.OK:
-        logging.error('Эндпойнт не доступен, программа остановлена')
+        logging.error(
+            f'Эндпойнт не доступен, программа остановлена{homework_statuses}'
+        )
         raise Exception(
             f'Oшибочный статус ответа по Api{homework_statuses.status_code}'
         )
-    response = homework_statuses.json()
+    try:
+        response = homework_statuses.json()
+    except Exception as error:
+        raise Exception(f' Мы поймали ошибку{error}')
     return response
 
 
@@ -72,15 +81,22 @@ def check_response(response):
     вернуть список домашних работ (он может быть и пустым),
     доступный в ответе API по ключу 'homeworks'.
     """
-    if type(response) != dict:
-        logging.error(f'В {response} отсутствует словарь')
+    try:
+        homework = response['homeworks']
+        current_date = response['current_date']
+    except Exception as error:
+        raise TypeError(f' Мы поймали ошибку{error}')
+    if not isinstance(response, dict):
         raise TypeError(
             f'В {response} отсутствует словарь'
         )
-    if type(response.get('homeworks')) != list:
-        logging.error(f'В {response}отсутствует список')
-        raise Exception(
-            f'В {response}отсутствует список'
+    if not isinstance(homework, list):
+        raise TypeError(
+            f'В {homework}отсутствует список'
+        )
+    if not isinstance(current_date, int):
+        raise TypeError(
+            f'В {current_date}число'
         )
     return response
 
@@ -96,12 +112,10 @@ def parse_status(homework):
         homework_name = homework.get('homework_name')
         homework_status = homework.get('status')
     except Exception as error:
-        logging.error(f'Ошибка в ключах {error}')
-        raise KeyError
-    if homework_status not in HOMEWORK_STATUSES:
-        logging.error(f'Неизвестный статус домашней работы{homework_status}')
+        raise KeyError(f' Мы поймали ошибку{error}')
+    if homework_status not in HOMEWORK_VERDICTS:
         raise Exception('Неизвестный статус домашней работы')
-    verdict = HOMEWORK_STATUSES.get(homework_status)
+    verdict = HOMEWORK_VERDICTS.get(homework_status)
     logging.info(f'Новый статус домашней работы :{homework_status}')
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -149,4 +163,8 @@ def main() -> None:
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s, %(levelname)s, %(name)s, %(message)s, %(lineno)d',
+    )
     main()
